@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+/* ============================================================
+   FindIt UPES — Global Design System (Tailwind v4)
+   Color Palette: Neutral Dark Gray
+   #0F0F10 · #6E6866 · #BEB8B6 · #C9C3C2 · #E7E4E3
+   ============================================================ */
+
+@theme inline {
+  /* ── Core Palette ──────────────────────────────────── */
+  --color-charcoal: #0F0F10;
+  --color-charcoal-light: #1A1A1B;
+  --color-charcoal-subtle: #242425;
+  --color-steel: #6E6866;
+  --color-steel-light: #857F7D;
+  --color-ash: #BEB8B6;
+  --color-ash-light: #D0CCCB;
+  --color-dust: #C9C3C2;
+  --color-cloud: #E7E4E3;
+  --color-snow: #F5F3F2;
+
+  /* ── Semantic Colors ───────────────────────────────── */
+  --color-background: #0A0A0B;
+  --color-background-2: #0F0F10;
+  --color-background-card: rgba(15, 15, 16, 0.85);
+  --color-foreground: #E7E4E3;
+  --color-foreground-muted: #C9C3C2;
+  --color-foreground-dim: #6E6866;
+
+  --color-primary: #BEB8B6;
+  --color-primary-glow: rgba(190, 184, 182, 0.3);
+  --color-secondary: #E7E4E3;
+  --color-accent: #C9C3C2;
+
+  --color-border: rgba(110, 104, 102, 0.25);
+  --color-border-hover: rgba(190, 184, 182, 0.4);
+
+  /* ── Status Colors ─────────────────────────────────── */
+  --color-lost: #EF4444;
+  --color-lost-bg: rgba(239, 68, 68, 0.12);
+  --color-found: #10B981;
+  --color-found-bg: rgba(16, 185, 129, 0.12);
+  --color-claimed: #F59E0B;
+  --color-claimed-bg: rgba(245, 158, 11, 0.12);
+
+  /* ── Typography ────────────────────────────────────── */
+  --font-display: "Outfit", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* ── Animations ────────────────────────────────────── */
+  --animate-fade-up: fadeUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+  --animate-fade-in: fadeIn 0.5s ease both;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-alt: float2 7s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 4s ease-in-out infinite;
+  --animate-toast-in: toastIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  --animate-spin-slow: spin 0.7s linear infinite;
+}
+
+/* ── Keyframes ──────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%      { transform: translateY(-18px) rotate(3deg); }
+  66%      { transform: translateY(-8px) rotate(-2deg); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%      { transform: translateY(-12px) rotate(-3deg); }
+  66%      { transform: translateY(-22px) rotate(2deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(190, 184, 182, 0.2); }
+  50%      { box-shadow: 0 0 40px rgba(190, 184, 182, 0.45); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Base Styles ────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-background); }
+::-webkit-scrollbar-thumb { background: var(--color-steel); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ash); }
+
+/* ── Gradient Text Helper ───────────────────────────── */
+.grad-text {
+  background: linear-gradient(135deg, var(--color-ash), var(--color-cloud));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.grad-text-warm {
+  background: linear-gradient(135deg, var(--color-steel), var(--color-ash), var(--color-cloud));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glow Orbs ──────────────────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.orb-primary {
+  background: radial-gradient(circle, rgba(190, 184, 182, 0.18) 0%, transparent 70%);
+}
+.orb-steel {
+  background: radial-gradient(circle, rgba(110, 104, 102, 0.2) 0%, transparent 70%);
+}
+.orb-cloud {
+  background: radial-gradient(circle, rgba(231, 228, 227, 0.08) 0%, transparent 70%);
+}
+
+/* ── Glass Card ─────────────────────────────────────── */
+.glass-card {
+  background: rgba(15, 15, 16, 0.65);
+  border: 1px solid rgba(110, 104, 102, 0.2);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  border-color: rgba(190, 184, 182, 0.3);
+  box-shadow: 0 0 30px rgba(190, 184, 182, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ── Delay utilities for staggered animations ───────── */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+.delay-6 { animation-delay: 0.6s; }
