@@ -18,7 +18,7 @@ import {
   Clock,
   Send,
 } from "lucide-react";
-import { CAMPUS_LOCATIONS, FLOORS } from "@/lib/constants";
+import { CAMPUS_LOCATIONS, getFloorsForBlock } from "@/lib/constants";
 
 const CATEGORIES = [
   "Electronics",
@@ -86,8 +86,11 @@ export default function ReportPage() {
     switch (step) {
       case 0:
         return form.itemName.trim() && form.category;
-      case 1:
-        return form.block && form.area;
+      case 1: {
+        // Check if the selected block has sub-areas
+        const hasAreas = CAMPUS_LOCATIONS[form.block]?.length > 0;
+        return hasAreas ? form.block && form.area : form.block;
+      }
       case 2:
         return form.date;
       case 3:
@@ -312,7 +315,7 @@ export default function ReportPage() {
                   </div>
                 </div>
 
-                {form.block && (
+                {form.block && CAMPUS_LOCATIONS[form.block]?.length > 0 && (
                   <div className="animate-fade-up">
                     <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-2">
                       Specific Area *
@@ -335,26 +338,28 @@ export default function ReportPage() {
                   </div>
                 )}
 
-                <div>
-                  <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-2">
-                    Floor (Optional)
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {FLOORS.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => update("floor", form.floor === f ? "" : f)}
-                        className={`px-3 py-2.5 rounded-xl text-[0.8rem] font-medium border transition-all ${
-                          form.floor === f
-                            ? "bg-[rgba(190,184,182,0.15)] border-[var(--color-ash)] text-[var(--color-foreground)]"
-                            : "border-[var(--color-border)] text-[var(--color-foreground-muted)] hover:border-[var(--color-border-hover)] hover:bg-[rgba(255,255,255,0.03)]"
-                        }`}
-                      >
-                        {f}
-                      </button>
-                    ))}
+                {getFloorsForBlock(form.block).length > 0 && (
+                  <div>
+                    <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-2">
+                      Floor (Optional)
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {getFloorsForBlock(form.block).map((f) => (
+                        <button
+                          key={f}
+                          onClick={() => update("floor", form.floor === f ? "" : f)}
+                          className={`px-3 py-2.5 rounded-xl text-[0.8rem] font-medium border transition-all ${
+                            form.floor === f
+                              ? "bg-[rgba(190,184,182,0.15)] border-[var(--color-ash)] text-[var(--color-foreground)]"
+                              : "border-[var(--color-border)] text-[var(--color-foreground-muted)] hover:border-[var(--color-border-hover)] hover:bg-[rgba(255,255,255,0.03)]"
+                          }`}
+                        >
+                          {f}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 

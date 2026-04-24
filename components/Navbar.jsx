@@ -9,8 +9,8 @@ export default function Navbar({ activePage = "", showNav = true }) {
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-[68px] bg-[rgba(10,10,11,0.88)] backdrop-blur-xl border-b border-[var(--color-border)] z-[1000] flex items-center">
-      <div className="flex items-center justify-between w-full max-w-[1280px] mx-auto px-6">
-        {/* Logo */}
+      <div className={`flex items-center w-full max-w-[1280px] mx-auto px-6 ${!showNav ? 'justify-center' : 'justify-between'}`}>
+        {/* Logo - Centered on landing, left-aligned on other pages */}
         <Link href="/" className="flex items-center gap-2.5 no-underline group">
           <img
             src="/logo.png?v=2"
@@ -28,15 +28,6 @@ export default function Navbar({ activePage = "", showNav = true }) {
             </div>
           </div>
         </Link>
-
-        {/* Center Tagline - Show on landing page */}
-        {!showNav && (
-          <div className="hidden md:flex items-center">
-            <p className="text-[0.85rem] text-[var(--color-foreground-muted)] font-medium tracking-wide">
-              Never Lose Anything On Campus Again
-            </p>
-          </div>
-        )}
 
         {/* Desktop Nav Links - Only show if showNav is true */}
         {showNav && (
@@ -79,38 +70,21 @@ export default function Navbar({ activePage = "", showNav = true }) {
           </div>
         )}
 
-        {/* Landing Page Quick Links */}
-        {!showNav && (
-          <div className="hidden md:flex items-center gap-4">
-            <Link
-              href="/browse"
-              className="text-[0.85rem] text-[var(--color-foreground-muted)] hover:text-[var(--color-foreground)] font-medium transition-colors"
-            >
-              Browse
-            </Link>
-            <div className="w-px h-4 bg-[var(--color-border)]" />
-            <Link
-              href="/report"
-              className="text-[0.85rem] font-semibold text-[var(--color-foreground)] hover:text-[var(--color-ash)] transition-colors"
-            >
-              Report Lost
-            </Link>
-          </div>
+        {/* Hamburger - Only show on mobile when showNav is true */}
+        {showNav && (
+          <button
+            className="flex md:hidden p-2 cursor-pointer rounded-lg bg-[rgba(255,255,255,0.05)] border border-[var(--color-border)] transition-all hover:bg-[rgba(255,255,255,0.08)]"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle navigation menu"
+            id="hamburger-btn"
+          >
+            {mobileOpen ? (
+              <X size={20} className="text-[var(--color-foreground)]" />
+            ) : (
+              <Menu size={20} className="text-[var(--color-foreground)]" />
+            )}
+          </button>
         )}
-
-        {/* Hamburger */}
-        <button
-          className="flex md:hidden p-2 cursor-pointer rounded-lg bg-[rgba(255,255,255,0.05)] border border-[var(--color-border)] transition-all hover:bg-[rgba(255,255,255,0.08)]"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle navigation menu"
-          id="hamburger-btn"
-        >
-          {mobileOpen ? (
-            <X size={20} className="text-[var(--color-foreground)]" />
-          ) : (
-            <Menu size={20} className="text-[var(--color-foreground)]" />
-          )}
-        </button>
       </div>
 
         {/* Mobile Nav - Only show if showNav is true */}
