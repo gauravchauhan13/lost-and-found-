@@ -17,6 +17,8 @@ import {
   Eye,
   ImageOff,
   Package,
+  Check,
+  AlertCircle,
 } from "lucide-react";
 import { formatLocation, timeAgo } from "@/lib/utils";
 
@@ -223,8 +225,18 @@ export default function BrowsePage() {
   const [sortBy, setSortBy] = useState("newest");
   const [viewMode, setViewMode] = useState("grid");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [claimRequests, setClaimRequests] = useState([]);
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [claimFormData, setClaimFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    reason: "",
+    description: "",
+  });
+  const [reasonDropdownOpen, setReasonDropdownOpen] = useState(false);
 
-const [sortOpen, setSortOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
 
   useEffect(() => {
     let stored = JSON.parse(localStorage.getItem("findit_items") || "[]");
@@ -237,6 +249,10 @@ const [sortOpen, setSortOpen] = useState(false);
       localStorage.setItem("findit_items", JSON.stringify(stored));
     }
     setItems(stored);
+    
+    // Load claim requests from localStorage
+    const claims = JSON.parse(localStorage.getItem("findit_claim_requests") || "[]");
+    setClaimRequests(claims);
   }, []);
 
   // Close sort dropdown on outside click
@@ -247,6 +263,52 @@ const [sortOpen, setSortOpen] = useState(false);
       return () => document.removeEventListener("click", handleClick);
     }
   }, [sortOpen]);
+
+  // Get claim request for current item
+  const getCurrentClaimRequest = () => {
+    return claimRequests.find((claim) => claim.itemId === selectedItem?.id);
+  };
+
+  // Handle opening claim form
+  const handleOpenClaimForm = () => {
+    setShowClaimForm(true);
+  };
+
+  // Handle claim form submission
+  const handleSubmitClaim = (e) => {
+    e.preventDefault();
+    
+    if (!claimFormData.name || !claimFormData.email || !claimFormData.phone) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const newClaim = {
+      id: `claim_${Date.now()}`,
+      itemId: selectedItem.id,
+      claimerName: claimFormData.name,
+      claimerEmail: claimFormData.email,
+      claimerPhone: claimFormData.phone,
+      reason: claimFormData.reason,
+      description: claimFormData.description,
+      status: "pending", // pending, verified, rejected
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedClaims = [...claimRequests, newClaim];
+    setClaimRequests(updatedClaims);
+    localStorage.setItem("findit_claim_requests", JSON.stringify(updatedClaims));
+
+    // Reset form
+    setClaimFormData({
+      name: "",
+      email: "",
+      phone: "",
+      reason: "",
+      description: "",
+    });
+    setShowClaimForm(false);
+  };
 
   const filteredItems = useMemo(() => {
     let result = [...items];
@@ -436,6 +498,15 @@ const [sortOpen, setSortOpen] = useState(false);
                     <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[0.68rem] font-semibold bg-[rgba(10,10,11,0.85)] backdrop-blur-md text-[var(--color-foreground-muted)] border border-[var(--color-border)]">
                       {item.category}
                     </span>
+                    {(() => {
+                      const claim = claimRequests.find((c) => c.itemId === item.id && c.status === "verified");
+                      return claim ? (
+                        <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[0.68rem] font-semibold bg-[rgba(34,197,94,0.15)] backdrop-blur-md text-[#22c55e] border border-[rgba(34,197,94,0.3)] flex items-center gap-1">
+                          <Check size={12} />
+                          CLAIMED
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Content */}
@@ -469,12 +540,20 @@ const [sortOpen, setSortOpen] = useState(false);
                   className="flex items-center gap-5 p-5 rounded-xl bg-[var(--color-background-card)] border border-[var(--color-border)] cursor-pointer transition-all duration-300 hover:border-[var(--color-border-hover)] hover:bg-[rgba(255,255,255,0.03)] animate-fade-up"
                   style={{ animationDelay: `${idx * 30}ms` }}
                 >
-                  <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--color-border)] flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--color-border)] flex-shrink-0 flex items-center justify-center overflow-hidden relative">
                     {item.image ? (
                       <img src={item.image} alt={item.itemName} className="w-full h-full object-cover" />
                     ) : (
                       <ImageOff size={20} className="text-[var(--color-foreground-dim)]" strokeWidth={1} />
                     )}
+                    {(() => {
+                      const claim = claimRequests.find((c) => c.itemId === item.id && c.status === "verified");
+                      return claim ? (
+                        <div className="absolute inset-0 bg-[rgba(34,197,94,0.2)] flex items-center justify-center">
+                          <Check size={16} className="text-[#22c55e]" strokeWidth={3} />
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-[var(--color-foreground)] truncate">{item.itemName}</h3>
@@ -498,36 +577,57 @@ const [sortOpen, setSortOpen] = useState(false);
       {/* Detail Modal */}
       {selectedItem && (
         <div
-          className="fixed inset-0 z-[2000] flex items-center justify-center px-4 bg-[rgba(0,0,0,0.7)] backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[2000] flex items-center justify-center px-4 py-6 bg-[rgba(0,0,0,0.7)] backdrop-blur-sm animate-fade-in overflow-y-auto"
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="w-full max-w-lg bg-[#141415] border border-[var(--color-border)] rounded-2xl overflow-hidden animate-fade-up shadow-[0_25px_60px_rgba(0,0,0,0.5)]"
+            className="w-full max-w-2xl bg-[#141415] border border-[var(--color-border)] rounded-2xl overflow-hidden animate-fade-up shadow-[0_25px_60px_rgba(0,0,0,0.5)] my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {selectedItem.image ? (
-              <img src={selectedItem.image} alt={selectedItem.itemName} className="w-full h-56 object-cover" />
+              <img src={selectedItem.image} alt={selectedItem.itemName} className="w-full h-64 object-cover" />
             ) : (
               <div className="w-full h-40 bg-[rgba(255,255,255,0.02)] flex items-center justify-center">
                 <ImageOff size={40} className="text-[var(--color-foreground-dim)]" strokeWidth={1} />
               </div>
             )}
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
+            <div className="p-8">
+              <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="font-[family-name:var(--font-display)] text-xl font-bold text-[var(--color-foreground)]">{selectedItem.itemName}</h2>
-                  <span className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-0.5 rounded-full text-[0.72rem] font-semibold bg-[rgba(239,68,68,0.12)] text-[#EF4444] border border-[rgba(239,68,68,0.2)]">LOST</span>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.72rem] font-semibold bg-[rgba(239,68,68,0.12)] text-[#EF4444] border border-[rgba(239,68,68,0.2)]">LOST</span>
+                    {(() => {
+                      const claim = getCurrentClaimRequest();
+                      if (!claim) return null;
+                      
+                      const statusColors = {
+                        pending: { bg: "rgba(245,158,11,0.15)", text: "#F59E0B", icon: "AlertCircle" },
+                        verified: { bg: "rgba(34,197,94,0.15)", text: "#22c55e" },
+                        rejected: { bg: "rgba(239,68,68,0.15)", text: "#EF4444" },
+                      };
+                      const colors = statusColors[claim.status];
+                      
+                      return (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[0.72rem] font-semibold" style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.text + "4d", borderWidth: "1px" }}>
+                          {claim.status === "verified" && <Check size={12} />}
+                          {claim.status === "pending" && <AlertCircle size={12} />}
+                          {claim.status.toUpperCase()}
+                        </span>
+                      );
+                    })()}
+                  </div>
                 </div>
-                <button onClick={() => setSelectedItem(null)} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors">
+                <button onClick={() => { setSelectedItem(null); setShowClaimForm(false); }} className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.05)] transition-colors">
                   <X size={18} className="text-[var(--color-foreground-dim)]" />
                 </button>
               </div>
 
               {selectedItem.description && (
-                <p className="text-[0.88rem] text-[var(--color-foreground-muted)] mb-5 leading-relaxed">{selectedItem.description}</p>
+                <p className="text-[0.9rem] text-[var(--color-foreground-muted)] mb-6 leading-relaxed">{selectedItem.description}</p>
               )}
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-4 text-sm mb-6 pb-6 border-b border-[var(--color-border)]">
                 <div className="flex items-center gap-3">
                   <Tag size={14} className="text-[var(--color-foreground-dim)]" />
                   <span className="text-[var(--color-foreground-dim)] w-20">Category</span>
@@ -559,9 +659,162 @@ const [sortOpen, setSortOpen] = useState(false);
                 )}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-xs text-[var(--color-foreground-dim)]">
-                <span>Reported {timeAgo(selectedItem.createdAt)}</span>
-                <span>ID: {selectedItem.id.slice(0, 12)}...</span>
+              <div className="mt-6">
+                {(() => {
+                  const currentClaim = getCurrentClaimRequest();
+                  
+                  if (!showClaimForm && !currentClaim) {
+                    return (
+                      <button
+                        onClick={handleOpenClaimForm}
+                        className="w-full py-3 px-4 rounded-xl font-medium transition-all text-sm mb-4 bg-[rgba(190,184,182,0.12)] text-[var(--color-foreground)] border border-[var(--color-ash)] hover:bg-[rgba(190,184,182,0.18)]"
+                      >
+                        <span className="flex items-center justify-center gap-2">
+                          <Check size={16} />
+                          Claim This Item
+                        </span>
+                      </button>
+                    );
+                  }
+
+                  if (currentClaim) {
+                    return (
+                      <div className="mb-4 p-4 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[var(--color-border)]">
+                        <p className="text-sm font-semibold text-[var(--color-foreground)] mb-3">Claim Request Summary</p>
+                        <div className="space-y-2 text-xs text-[var(--color-foreground-muted)]">
+                          <p><strong className="text-[var(--color-foreground-dim)]">Name:</strong> {currentClaim.claimerName}</p>
+                          <p><strong className="text-[var(--color-foreground-dim)]">Email:</strong> {currentClaim.claimerEmail}</p>
+                          <p><strong className="text-[var(--color-foreground-dim)]">Phone:</strong> {currentClaim.claimerPhone}</p>
+                          <p><strong className="text-[var(--color-foreground-dim)]">Status:</strong> <span className={`font-semibold ${currentClaim.status === "verified" ? "text-[#22c55e]" : currentClaim.status === "pending" ? "text-[#F59E0B]" : "text-[#EF4444]"}`}>{currentClaim.status.toUpperCase()}</span></p>
+                          <p className="text-[0.65rem] text-[var(--color-foreground-dim)] mt-3">Submitted {timeAgo(currentClaim.createdAt)}</p>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
+
+                {showClaimForm && (
+                  <form onSubmit={handleSubmitClaim} className="p-5 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[var(--color-border)] space-y-4">
+                    <p className="text-sm font-semibold text-[var(--color-foreground)] mb-1">Your Details</p>
+                    
+                    <div>
+                      <label className="text-xs text-[var(--color-foreground-dim)] mb-1.5 block font-medium">Full Name <span className="text-[#EF4444]">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={claimFormData.name}
+                        onChange={(e) => setClaimFormData({ ...claimFormData, name: e.target.value })}
+                        placeholder="Your full name"
+                        className="w-full px-3 py-2.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)] text-[var(--color-foreground)] placeholder-[var(--color-foreground-dim)] text-sm focus:border-[var(--color-ash)] focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-[var(--color-foreground-dim)] mb-1.5 block font-medium">Email Address <span className="text-[#EF4444]">*</span></label>
+                      <input
+                        type="email"
+                        required
+                        value={claimFormData.email}
+                        onChange={(e) => setClaimFormData({ ...claimFormData, email: e.target.value })}
+                        placeholder="your.email@example.com"
+                        className="w-full px-3 py-2.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)] text-[var(--color-foreground)] placeholder-[var(--color-foreground-dim)] text-sm focus:border-[var(--color-ash)] focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-[var(--color-foreground-dim)] mb-1.5 block font-medium">Phone Number <span className="text-[#EF4444]">*</span></label>
+                      <input
+                        type="tel"
+                        required
+                        value={claimFormData.phone}
+                        onChange={(e) => setClaimFormData({ ...claimFormData, phone: e.target.value })}
+                        placeholder="+91 XXXXXXXXXX"
+                        className="w-full px-3 py-2.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)] text-[var(--color-foreground)] placeholder-[var(--color-foreground-dim)] text-sm focus:border-[var(--color-ash)] focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-[var(--color-foreground-dim)] mb-1.5 block font-medium">Reason for Claim</label>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setReasonDropdownOpen(!reasonDropdownOpen)}
+                          className="w-full px-3 py-2.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)] text-[var(--color-foreground)] text-sm focus:border-[var(--color-ash)] focus:outline-none transition-colors text-left flex items-center justify-between hover:bg-[rgba(255,255,255,0.06)]"
+                        >
+                          <span>{claimFormData.reason || "Select a reason..."}</span>
+                          <ChevronDown size={16} className={`text-[var(--color-foreground-dim)] transition-transform ${reasonDropdownOpen ? "rotate-180" : ""}`} />
+                        </button>
+
+                        {reasonDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 mt-1 rounded-lg bg-[#1a1a1b] border border-[var(--color-border)] z-[100] overflow-hidden shadow-lg">
+                            {[
+                              { value: "", label: "Select a reason..." },
+                              { value: "I lost this item", label: "I lost this item" },
+                              { value: "This belongs to me", label: "This belongs to me" },
+                              { value: "I can identify it", label: "I can identify it" },
+                            ].map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                  setClaimFormData({ ...claimFormData, reason: option.value });
+                                  setReasonDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-3 py-2.5 text-sm transition-colors"
+                                style={{
+                                  backgroundColor: claimFormData.reason === option.value ? "rgba(190,184,182,0.15)" : "#1a1a1b",
+                                  color: claimFormData.reason === option.value ? "var(--color-foreground)" : "var(--color-foreground-muted)",
+                                  borderBottom: option !== "I can identify it" ? "1px solid rgba(255,255,255,0.04)" : "none",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = claimFormData.reason === option.value ? "rgba(190,184,182,0.15)" : "rgba(255,255,255,0.08)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = claimFormData.reason === option.value ? "rgba(190,184,182,0.15)" : "#1a1a1b";
+                                }}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-[var(--color-foreground-dim)] mb-1.5 block font-medium">Additional Details</label>
+                      <textarea
+                        value={claimFormData.description}
+                        onChange={(e) => setClaimFormData({ ...claimFormData, description: e.target.value })}
+                        placeholder="Provide details that can help verify your claim..."
+                        className="w-full px-3 py-2.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[var(--color-border)] text-[var(--color-foreground)] placeholder-[var(--color-foreground-dim)] text-sm focus:border-[var(--color-ash)] focus:outline-none resize-none h-16 transition-colors"
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="flex-1 py-2.5 px-3 rounded-lg bg-[rgba(34,197,94,0.15)] text-[#22c55e] border border-[rgba(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.25)] font-medium text-sm transition-colors"
+                      >
+                        Submit Claim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowClaimForm(false)}
+                        className="flex-1 py-2.5 px-3 rounded-lg bg-[rgba(255,255,255,0.04)] text-[var(--color-foreground-muted)] border border-[var(--color-border)] hover:bg-[rgba(255,255,255,0.08)] font-medium text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-[var(--color-foreground-dim)] pt-4 border-t border-[var(--color-border)]">
+                  <span>Reported {timeAgo(selectedItem.createdAt)}</span>
+                  <span>ID: {selectedItem.id.slice(0, 12)}...</span>
+                </div>
               </div>
             </div>
           </div>
